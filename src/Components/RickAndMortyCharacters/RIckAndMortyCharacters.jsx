@@ -1,92 +1,54 @@
-import React, { useEffect, useState } from "react";
-import "./RickAndMortyCharcaters.css";
+import React, { useState } from "react";
+import { useQuery } from "react-query";
+import CharacterComponent from "../charactersComponent/charactersComponent";
 
-function RickAndMortyCharacters() {
-  const baseUrl = "https://rickandmortyapi.com/api/character";
-  const [characters, setCharacters] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+function RickAndMortyCharactersComponent() {
+  const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(baseUrl);
-        const data = await response.json();
-        setCharacters(data.results);
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error fetching character data:", error);
-        setIsLoading(false);
-      }
-    };
+  const fetchData = async ({ queryKey }) => {
+    const response = await fetch(
+      `https://rickandmortyapi.com/api/character/?page=${queryKey[1]}`
+    );
+    return response.json();
+  };
 
-    fetchData();
-  }, []);
+  const { data, isPreviousData, isLoading, isError } = useQuery(
+    ["characters", page],
+    fetchData,
+    { keepPreviousData: true }
+  );
 
   if (isLoading) {
     return <div>Loading...</div>;
   }
+  if (isError) {
+    return <div>Error!!</div>;
+  }
+
+  console.log(isPreviousData);
 
   return (
     <React.Fragment>
-      <h1>Rick and Morty Characters</h1>
-      <div className="grid-container">
-        {characters.slice(0, 12).map((character) => (
-          <div key={character.id} className="grid-item">
-            <div className="image-container">
-              <img src={character.image} alt={character.name}></img>
-            </div>
-            <div className="content-container">
-              <article className="characterCard__Wrapper">
-                <div className="characterCard__ContentWrapper">
-                  <div className="section">
-                    <a
-                      href={character.url}
-                      rel="noopener noreferrer"
-                      target="_blank"
-                      className="externalLink__ExternalLink"
-                      style={{ textDecoration: "none" }}
-                    >
-                      <h1>{character.name}</h1>
-                    </a>
-                    <span
-                      className={`status ${character.status.toLowerCase()}`}
-                    >
-                      <span className="status__icon"></span>
-                      {character.status} - {character.species}
-                    </span>
-                  </div>
-                  <div className="section">
-                    <span className="text-gray">Last known location: </span>
-                    <br />
-                    <a
-                      href={character.location.url}
-                      rel="noopener noreferrer"
-                      target="_blank"
-                      className="externalLink__ExternalLink"
-                    >
-                      {character.location.name}
-                    </a>
-                  </div>
-                  <div className="section">
-                    <span className="text-gray">First seen in: </span>
-                    <br />
-                    <a
-                      href={character.origin.url}
-                      rel="noopener noreferrer"
-                      target="_blank"
-                      className="externalLink__ExternalLink"
-                    >
-                      {character.origin.name}
-                    </a>
-                  </div>
-                </div>
-              </article>
-            </div>
+      <div>
+        {data.results.map((character) => (
+          <div>
+            <CharacterComponent character={character} />
           </div>
         ))}
+        <div>
+          <button disabled={page === 1} onClick={() => setPage(page - 1)}>
+            Previous Page
+          </button>
+          <button
+            disabled={isPreviousData && !data.info.next}
+            onClick={() => setPage(page + 1)}
+          >
+            Next Page
+          </button>
+        </div>
       </div>
     </React.Fragment>
   );
 }
 
-export default RickAndMortyCharacters;
+export default RickAndMortyCharactersComponent;
